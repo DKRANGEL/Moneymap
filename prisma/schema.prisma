@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Moneymap — Database Schema
+// Stack: Supabase (PostgreSQL) + Prisma ORM
 
 generator client {
   provider = "prisma-client-js"
@@ -12,4 +9,171 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+}
+
+// ─── USUÁRIO ──────────────────────────────────────────────────────────────────
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts     Account[]
+  transactions Transaction[]
+  uploads      PdfUpload[]
+  categories   Category[]
+  rules        CategoryRule[]
+
+  @@map("users")
+}
+
+// ─── CONTAS BANCÁRIAS ─────────────────────────────────────────────────────────
+model Account {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  bank            BankType
+  type            AccountType
+  pluggyItemId    String?
+  pluggyAccountId String?
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  transactions Transaction[]
+  uploads      PdfUpload[]
+
+  @@map("accounts")
+}
+
+// ─── CATEGORIAS ───────────────────────────────────────────────────────────────
+model Category {
+  id        String    @id @default(uuid())
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  icon      String?
+  color     String?
+  isDefault Boolean   @default(false)
+  parentId  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+
+  transactions Transaction[]
+  rules        CategoryRule[]
+
+  @@map("categories")
+}
+
+// ─── REGRAS DE CATEGORIZAÇÃO AUTOMÁTICA ──────────────────────────────────────
+model CategoryRule {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  pattern    String
+  priority   Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@map("category_rules")
+}
+
+// ─── TRANSAÇÕES ───────────────────────────────────────────────────────────────
+model Transaction {
+  id          String            @id @default(uuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId   String
+  account     Account           @relation(fields: [accountId], references: [id])
+  categoryId  String?
+  category    Category?         @relation(fields: [categoryId], references: [id])
+  amount      Decimal           @db.Decimal(12, 2)
+  type        TransactionType
+  description String
+  date        DateTime          @db.Date
+  dateTime    DateTime?
+  source      TransactionSource
+  pluggyId    String?
+  uploadId    String?
+  upload      PdfUpload?        @relation(fields: [uploadId], references: [id])
+  mergeStatus MergeStatus       @default(confirmed)
+  mergedWith  String?
+  isDuplicate Boolean           @default(false)
+  isPending   Boolean           @default(false)
+  isRecurring Boolean           @default(false)
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([userId, date])
+  @@index([userId, accountId])
+  @@index([pluggyId])
+  @@map("transactions")
+}
+
+// ─── UPLOADS DE PDF ───────────────────────────────────────────────────────────
+model PdfUpload {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId    String
+  account      Account      @relation(fields: [accountId], references: [id])
+  fileName     String
+  storagePath  String
+  bank         BankType
+  periodStart  DateTime     @db.Date
+  periodEnd    DateTime     @db.Date
+  status       UploadStatus @default(processing)
+  parsedCount  Int?
+  errorMessage String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  transactions Transaction[]
+
+  @@map("pdf_uploads")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+enum BankType {
+  nubank
+  mercadopago
+  picpay
+  btg
+  other
+}
+
+enum AccountType {
+  conta_digital
+  cartao_credito
+  cartao_debito
+  investimento
+}
+
+enum TransactionType {
+  entrada
+  saida
+}
+
+enum TransactionSource {
+  pdf
+  pluggy
+  manual
+}
+
+enum MergeStatus {
+  confirmed
+  pending
+  merged
+}
+
+enum UploadStatus {
+  processing
+  completed
+  failed
 }
