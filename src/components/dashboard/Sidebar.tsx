@@ -4,6 +4,7 @@ import {useState} from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {usePathname} from 'next/navigation'
+import { SignOutButton } from '@/components/dashboard/SignOutButton'
 import {
     LayoutDashboard,
     ArrowLeftRight,
@@ -108,10 +109,10 @@ export function Sidebar({user}: SidebarProps) {
 
             {/* User */}
             <div className={`
-        flex items-center gap-3 px-4 py-4 mt-auto
-        border-t border-white/5
-        ${collapsed ? 'justify-center' : ''}
-      `}>
+  flex items-center gap-3 px-4 py-4 mt-auto
+  border-t border-white/5
+  ${collapsed ? 'justify-center' : ''}
+`}>
                 {user.avatarUrl ? (
                     <Image
                         src={user.avatarUrl}
@@ -123,19 +124,22 @@ export function Sidebar({user}: SidebarProps) {
                 ) : (
                     <div
                         className="w-9 h-9 rounded-full bg-surface-card flex items-center justify-center shrink-0 border border-white/10">
-            <span className="text-xs text-text-secondary font-medium">
-              {user.name?.[0] ?? (user.email[0] ?? '?').toUpperCase()}
-            </span>
+      <span className="text-xs text-text-secondary font-medium">
+        {user.name?.[0] ?? (user.email[0] ?? '?').toUpperCase()}
+      </span>
                     </div>
                 )}
                 {!collapsed && (
-                    <div className="flex flex-col min-w-0">
-            <span className="text-sm font-medium text-text-primary truncate">
-              {user.name ?? 'Usuário'}
-            </span>
-                        <span className="text-xs text-text-secondary truncate">
-              {user.email}
-            </span>
+                    <div className="flex items-center justify-between flex-1 min-w-0">
+                        <div className="flex flex-col min-w-0">
+        <span className="text-sm font-medium text-text-primary truncate">
+          {user.name ?? 'Usuário'}
+        </span>
+                            <span className="text-xs text-text-secondary truncate">
+          {user.email}
+        </span>
+                        </div>
+                        <SignOutButton/>
                     </div>
                 )}
             </div>
