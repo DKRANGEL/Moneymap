@@ -1,5 +1,6 @@
 ﻿import {createClient} from '@/lib/supabase/server'
 import {getAccountById} from '@/lib/accounts'
+import {getCardsByAccount} from '@/lib/cards'
 import {redirect, notFound} from 'next/navigation'
 import {AccountDetailClient} from '@/components/accounts/AccountDetailClient'
 
@@ -12,8 +13,9 @@ export default async function AccountDetailPage({params}: PageProps) {
     if (!user) redirect('/login')
 
     const account = await getAccountById(user.id, params.id)
-
     if (!account) notFound()
 
-    return <AccountDetailClient account={account}/>
+    const cards = await getCardsByAccount(user.id, params.id)
+
+    return <AccountDetailClient account={account} initialCards={cards}/>
 }
