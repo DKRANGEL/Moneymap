@@ -13,6 +13,15 @@ const BRAND_OPTIONS = [
     {value: 'other', label: 'Outro'},
 ]
 
+const COLOR_OPTIONS = [
+    {value: '#820AD1', label: 'Nubank'},
+    {value: '#009EE3', label: 'Mercado Pago'},
+    {value: '#11C76F', label: 'PicPay'},
+    {value: '#002868', label: 'BTG'},
+    {value: '#EC7000', label: 'Itaú'},
+    {value: '#CC092F', label: 'Bradesco'},
+]
+
 type CardModalProps = {
     accountId: string
     card: Card | null
@@ -26,6 +35,7 @@ export function CardModal({accountId, card, onClose, onSaved}: CardModalProps) {
     const [brand, setBrand] = useState<CardBrand>(card?.brand ?? 'visa')
     const [closingDay, setClosingDay] = useState(card?.closingDay ?? 1)
     const [dueDay, setDueDay] = useState(card?.dueDay ?? 1)
+    const [color, setColor] = useState(card?.color ?? '#820AD1')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -48,8 +58,8 @@ export function CardModal({accountId, card, onClose, onSaved}: CardModalProps) {
             const url = isEditing ? `/api/cards/${card.id}` : '/api/cards'
             const method = isEditing ? 'PATCH' : 'POST'
             const body = isEditing
-                ? {nickname, lastFour, brand, closingDay, dueDay}
-                : {accountId, nickname, lastFour, brand, closingDay, dueDay}
+                ? {nickname, lastFour, brand, closingDay, dueDay, color}
+                : {accountId, nickname, lastFour, brand, closingDay, dueDay, color}
 
             const res = await fetch(url, {
                 method,
@@ -89,8 +99,48 @@ export function CardModal({accountId, card, onClose, onSaved}: CardModalProps) {
                     </button>
                 </div>
 
-                {/* Campos */}
                 <div className="flex flex-col gap-5">
+
+                    {/* Preview do cartão */}
+                    <div
+                        className="w-full h-32 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-colors duration-300"
+                        style={{backgroundColor: color}}
+                    >
+                        <div className="flex justify-between items-start">
+              <span className="text-white/80 text-xs font-medium uppercase tracking-widest">
+                {nickname || 'Apelido do cartão'}
+              </span>
+                            <span className="text-white/60 text-xs">
+                {BRAND_OPTIONS.find(b => b.value === brand)?.label}
+              </span>
+                        </div>
+                        <div className="flex justify-between items-end">
+              <span className="text-white font-mono text-sm tracking-widest">
+                •••• •••• •••• {lastFour || '0000'}
+              </span>
+                            <span className="text-white/60 text-xs">
+                Fecha {closingDay} · Vence {dueDay}
+              </span>
+                        </div>
+                    </div>
+
+                    {/* Seleção de cor */}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">
+                            Cor do cartão
+                        </label>
+                        <div className="flex gap-3">
+                            {COLOR_OPTIONS.map(opt => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setColor(opt.value)}
+                                    title={opt.label}
+                                    className={`w-8 h-8 rounded-full transition-all ${color === opt.value ? 'ring-2 ring-offset-2 ring-offset-surface-card ring-white scale-110' : 'opacity-70 hover:opacity-100'}`}
+                                    style={{backgroundColor: opt.value}}
+                                />
+                            ))}
+                        </div>
+                    </div>
 
                     {/* Apelido */}
                     <div className="flex flex-col gap-2">

@@ -11,6 +11,7 @@ const updateCardSchema = z.object({
     closingDay: z.number().int().min(1).max(31).optional(),
     dueDay: z.number().int().min(1).max(31).optional(),
     isActive: z.boolean().optional(),
+    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
 })
 
 type RouteParams = { params: { id: string } }
