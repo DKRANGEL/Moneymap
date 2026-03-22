@@ -10,8 +10,25 @@ type Card = {
     lastFour: string
 }
 
+type Transaction = {
+    id: string
+    description: string
+    amount: number
+    type: string
+    date: string
+    paymentMethod: string
+    status: string
+    notes: string | null
+    accountId?: string
+    cardId?: string | null
+    account: { name: string; bank: string }
+    card: { nickname: string; lastFour: string } | null
+    category: { name: string; icon: string | null; color: string | null } | null
+}
+
 type TransactionModalProps = {
     accounts: Account[]
+    transaction?: Transaction | null
     onClose: () => void
     onSaved: () => void
 }
@@ -25,16 +42,24 @@ const PAYMENT_OPTIONS = [
     {value: 'transferencia', label: 'Transferência'},
 ]
 
-export function TransactionModal({accounts, onClose, onSaved}: TransactionModalProps) {
-    const [type, setType] = useState<'entrada' | 'saida'>('saida')
-    const [description, setDescription] = useState('')
-    const [amount, setAmount] = useState('')
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]!)
-    const [paymentMethod, setPaymentMethod] = useState('pix')
-    const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
-    const [cardId, setCardId] = useState('')
-    const [status, setStatus] = useState('pendente')
-    const [notes, setNotes] = useState('')
+export function TransactionModal({accounts, transaction, onClose, onSaved}: TransactionModalProps) {
+    const isEditing = !!transaction
+
+    const [type, setType] = useState<'entrada' | 'saida'>(
+        (transaction?.type as 'entrada' | 'saida') ?? 'saida'
+    )
+    const [description, setDescription] = useState(transaction?.description ?? '')
+    const [amount, setAmount] = useState(transaction?.amount ? String(transaction.amount) : '')
+    const [date, setDate] = useState(
+        transaction?.date
+            ? new Date(transaction.date).toISOString().split('T')[0]!
+            : new Date().toISOString().split('T')[0]!
+    )
+    const [paymentMethod, setPaymentMethod] = useState(transaction?.paymentMethod ?? 'pix')
+    const [accountId, setAccountId] = useState(transaction?.accountId ?? accounts[0]?.id ?? '')
+    const [cardId, setCardId] = useState(transaction?.cardId ?? '')
+    const [status, setStatus] = useState(transaction?.status ?? 'pendente')
+    const [notes, setNotes] = useState(transaction?.notes ?? '')
     const [cards, setCards] = useState<Card[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -88,8 +113,11 @@ export function TransactionModal({accounts, onClose, onSaved}: TransactionModalP
         setError(null)
 
         try {
-            const res = await fetch('/api/transactions', {
-                method: 'POST',
+            const url = isEditing ? `/api/transactions/${transaction.id}` : '/api/transactions'
+            const method = isEditing ? 'PATCH' : 'POST'
+
+            const res = await fetch(url, {
+                method,
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     type,
@@ -127,7 +155,9 @@ export function TransactionModal({accounts, onClose, onSaved}: TransactionModalP
                 {/* Header fixo */}
                 <div className="flex items-center justify-between p-8 pb-6 border-b border-white/5">
                     <div>
-                        <h2 className="font-display text-2xl font-bold text-text-primary">Nova Transação</h2>
+                        <h2 className="font-display text-2xl font-bold text-text-primary">
+                            {isEditing ? 'Editar Transação' : 'Nova Transação'}
+                        </h2>
                         <div className="h-1 w-12 bg-accent mt-2 rounded-full"/>
                     </div>
                     <button onClick={onClose} className="text-text-secondary hover:text-text-primary transition-colors">
@@ -292,7 +322,7 @@ export function TransactionModal({accounts, onClose, onSaved}: TransactionModalP
                         disabled={loading}
                         className="bg-accent text-accent-dark px-8 py-2.5 rounded-lg font-bold hover:bg-accent/90 transition-colors text-sm disabled:opacity-50"
                     >
-                        {loading ? 'Salvando...' : 'Salvar'}
+                        {loading ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Salvar'}
                     </button>
                 </div>
 

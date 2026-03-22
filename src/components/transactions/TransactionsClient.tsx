@@ -8,6 +8,7 @@ import {MonthlySummary} from './MonthlySummary'
 import {FilterBar} from './FilterBar'
 import {TransactionGroup} from './TransactionGroup'
 import {TransactionModal} from './TransactionModal'
+import {ConfirmModal} from './ConfirmModal'
 
 type Transaction = {
     id: string
@@ -58,13 +59,12 @@ export function TransactionsClient({
     const [year, setYear] = useState(initialYear)
     const [filters, setFilters] = useState<Filters>({})
     const [modalOpen, setModalOpen] = useState(false)
+    const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+    const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null)
+    const [deleteLoading, setDeleteLoading] = useState(false)
     const [loading, setLoading] = useState(false)
 
-    async function fetchTransactions(
-        m: number,
-        y: number,
-        f: Filters = {}
-    ) {
+    async function fetchTransactions(m: number, y: number, f: Filters = {}) {
         setLoading(true)
         try {
             const params = new URLSearchParams({
@@ -106,9 +106,34 @@ export function TransactionsClient({
     function handleTransactionSaved() {
         fetchTransactions(month, year, filters)
         setModalOpen(false)
+        setEditingTransaction(null)
     }
 
-    // Agrupa transações por dia
+    function handleEdit(transaction: Transaction) {
+        setEditingTransaction(transaction)
+        setModalOpen(true)
+    }
+
+    function handleDeleteRequest(transaction: Transaction) {
+        setDeletingTransaction(transaction)
+    }
+
+    async function handleDeleteConfirm() {
+        if (!deletingTransaction) return
+        setDeleteLoading(true)
+        try {
+            const res = await fetch(`/api/transactions/${deletingTransaction.id}`, {
+                method: 'DELETE',
+            })
+            if (res.ok) {
+                setDeletingTransaction(null)
+                fetchTransactions(month, year, filters)
+            }
+        } finally {
+            setDeleteLoading(false)
+        }
+    }
+
     const grouped = transactions.reduce<Record<string, Transaction[]>>((acc, tx) => {
         const day = new Date(tx.date).toISOString().split('T')[0]!
         if (!acc[day]) acc[day] = []
@@ -120,21 +145,10 @@ export function TransactionsClient({
 
     return (
         <div className="flex flex-col gap-8">
-
-            {/* Navegação de mês */}
             <MonthNavigator month={month} year={year} onChange={handleMonthChange}/>
-
-            {/* Resumo */}
             <MonthlySummary summary={summary}/>
+            <FilterBar accounts={initialAccounts} filters={filters} onChange={handleFilterChange}/>
 
-            {/* Filtros */}
-            <FilterBar
-                accounts={initialAccounts}
-                filters={filters}
-                onChange={handleFilterChange}
-            />
-
-            {/* Lista */}
             {loading ? (
                 <div className="flex items-center justify-center py-16">
                     <p className="text-text-secondary text-sm">Carregando...</p>
@@ -156,6 +170,8 @@ export function TransactionsClient({
                             key={day}
                             date={day}
                             transactions={grouped[day]!}
+                            onEdit={handleEdit}
+                            onDelete={handleDeleteRequest}
                         />
                     ))}
                 </div>
@@ -163,18 +179,37 @@ export function TransactionsClient({
 
             {/* FAB */}
             <button
-                onClick={() => setModalOpen(true)}
+                onClick={() => {
+                    setEditingTransaction(null);
+                    setModalOpen(true)
+                }}
                 className="fixed bottom-10 right-10 w-14 h-14 rounded-full bg-accent text-accent-dark shadow-2xl shadow-accent/20 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50"
             >
                 <Plus size={24}/>
             </button>
 
-            {/* Modal */}
+            {/* Modal criação/edição */}
             {modalOpen && (
                 <TransactionModal
                     accounts={initialAccounts}
-                    onClose={() => setModalOpen(false)}
+                    transaction={editingTransaction}
+                    onClose={() => {
+                        setModalOpen(false);
+                        setEditingTransaction(null)
+                    }}
                     onSaved={handleTransactionSaved}
+                />
+            )}
+
+            {/* Modal confirmação exclusão */}
+            {deletingTransaction && (
+                <ConfirmModal
+                    title="Excluir transação"
+                    message={`Tem certeza que deseja excluir "${deletingTransaction.description}"? Esta ação não pode ser desfeita.`}
+                    confirmLabel="Excluir"
+                    onConfirm={handleDeleteConfirm}
+                    onClose={() => setDeletingTransaction(null)}
+                    loading={deleteLoading}
                 />
             )}
         </div>

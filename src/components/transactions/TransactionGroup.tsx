@@ -15,18 +15,16 @@ type Transaction = {
 }
 
 const DAY_NAMES = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado']
-
-const MONTH_NAMES = [
-    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-]
+const MONTH_NAMES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 
 type TransactionGroupProps = {
     date: string
     transactions: Transaction[]
+    onEdit: (transaction: Transaction) => void
+    onDelete: (transaction: Transaction) => void
 }
 
-export function TransactionGroup({date, transactions}: TransactionGroupProps) {
+export function TransactionGroup({date, transactions, onEdit, onDelete}: TransactionGroupProps) {
     const d = new Date(date + 'T12:00:00')
     const dayName = DAY_NAMES[d.getDay()]
     const dayNumber = d.getDate()
@@ -42,7 +40,12 @@ export function TransactionGroup({date, transactions}: TransactionGroupProps) {
             </div>
             <div className="flex flex-col gap-2">
                 {transactions.map(tx => (
-                    <TransactionCard key={tx.id} transaction={tx}/>
+                    <TransactionCard
+                        key={tx.id}
+                        transaction={tx}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                    />
                 ))}
             </div>
         </div>
