@@ -21,10 +21,11 @@ type TransactionGroupProps = {
     date: string
     transactions: Transaction[]
     onEdit: (transaction: Transaction) => void
+    onDuplicate: (transaction: Transaction) => void
     onDelete: (transaction: Transaction) => void
 }
 
-export function TransactionGroup({date, transactions, onEdit, onDelete}: TransactionGroupProps) {
+export function TransactionGroup({date, transactions, onEdit, onDuplicate, onDelete}: TransactionGroupProps) {
     const d = new Date(date + 'T12:00:00')
     const dayName = DAY_NAMES[d.getDay()]
     const dayNumber = d.getDate()
@@ -44,6 +45,7 @@ export function TransactionGroup({date, transactions, onEdit, onDelete}: Transac
                         key={tx.id}
                         transaction={tx}
                         onEdit={onEdit}
+                        onDuplicate={onDuplicate}
                         onDelete={onDelete}
                     />
                 ))}
