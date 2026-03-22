@@ -64,6 +64,7 @@ model Card {
   brand      CardBrand
   closingDay Int
   dueDay     Int
+  color      String    @default("#1c2026")
   isActive   Boolean   @default(true)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
