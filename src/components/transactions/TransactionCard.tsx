@@ -56,10 +56,11 @@ const PAYMENT_LABELS: Record<string, string> = {
 type TransactionCardProps = {
     transaction: Transaction
     onEdit: (transaction: Transaction) => void
+    onDuplicate: (transaction: Transaction) => void
     onDelete: (transaction: Transaction) => void
 }
 
-export function TransactionCard({transaction: tx, onEdit, onDelete}: TransactionCardProps) {
+export function TransactionCard({ transaction: tx, onEdit, onDuplicate, onDelete }: TransactionCardProps) {
     const [menuOpen, setMenuOpen] = useState(false)
     const isEntrada = tx.type === 'entrada'
     const icon = tx.category?.icon
@@ -122,6 +123,15 @@ export function TransactionCard({transaction: tx, onEdit, onDelete}: Transaction
                                 className="w-full text-left px-4 py-2.5 text-sm text-text-primary hover:bg-surface-bright transition-colors"
                             >
                                 Editar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    onDuplicate(tx);
+                                    setMenuOpen(false)
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-text-primary hover:bg-surface-bright transition-colors"
+                            >
+                                Duplicar
                             </button>
                             <button
                                 onClick={() => {

@@ -29,6 +29,7 @@ type Transaction = {
 type TransactionModalProps = {
     accounts: Account[]
     transaction?: Transaction | null
+    duplicateFrom?: Transaction | null
     onClose: () => void
     onSaved: () => void
 }
@@ -42,24 +43,25 @@ const PAYMENT_OPTIONS = [
     {value: 'transferencia', label: 'Transferência'},
 ]
 
-export function TransactionModal({accounts, transaction, onClose, onSaved}: TransactionModalProps) {
+export function TransactionModal({accounts, transaction, duplicateFrom, onClose, onSaved}: TransactionModalProps) {
     const isEditing = !!transaction
+    const source = transaction ?? duplicateFrom ?? null
 
     const [type, setType] = useState<'entrada' | 'saida'>(
-        (transaction?.type as 'entrada' | 'saida') ?? 'saida'
+        (source?.type as 'entrada' | 'saida') ?? 'saida'
     )
-    const [description, setDescription] = useState(transaction?.description ?? '')
-    const [amount, setAmount] = useState(transaction?.amount ? String(transaction.amount) : '')
+    const [description, setDescription] = useState(source?.description ?? '')
+    const [amount, setAmount] = useState(source?.amount ? String(source.amount) : '')
     const [date, setDate] = useState(
         transaction?.date
             ? new Date(transaction.date).toISOString().split('T')[0]!
             : new Date().toISOString().split('T')[0]!
     )
-    const [paymentMethod, setPaymentMethod] = useState(transaction?.paymentMethod ?? 'pix')
-    const [accountId, setAccountId] = useState(transaction?.accountId ?? accounts[0]?.id ?? '')
-    const [cardId, setCardId] = useState(transaction?.cardId ?? '')
-    const [status, setStatus] = useState(transaction?.status ?? 'pendente')
-    const [notes, setNotes] = useState(transaction?.notes ?? '')
+    const [paymentMethod, setPaymentMethod] = useState(source?.paymentMethod ?? 'pix')
+    const [accountId, setAccountId] = useState(source?.accountId ?? accounts[0]?.id ?? '')
+    const [cardId, setCardId] = useState(source?.cardId ?? '')
+    const [status, setStatus] = useState(source?.status ?? 'pendente')
+    const [notes, setNotes] = useState(source?.notes ?? '')
     const [cards, setCards] = useState<Card[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -156,7 +158,7 @@ export function TransactionModal({accounts, transaction, onClose, onSaved}: Tran
                 <div className="flex items-center justify-between p-8 pb-6 border-b border-white/5">
                     <div>
                         <h2 className="font-display text-2xl font-bold text-text-primary">
-                            {isEditing ? 'Editar Transação' : 'Nova Transação'}
+                            {isEditing ? 'Editar Transação' : duplicateFrom ? 'Duplicar Transação' : 'Nova Transação'}
                         </h2>
                         <div className="h-1 w-12 bg-accent mt-2 rounded-full"/>
                     </div>

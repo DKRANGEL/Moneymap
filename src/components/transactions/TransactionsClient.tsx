@@ -59,6 +59,7 @@ export function TransactionsClient({
     const [year, setYear] = useState(initialYear)
     const [filters, setFilters] = useState<Filters>({})
     const [modalOpen, setModalOpen] = useState(false)
+    const [duplicatingTransaction, setDuplicatingTransaction] = useState<Transaction | null>(null)
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
     const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null)
     const [deleteLoading, setDeleteLoading] = useState(false)
@@ -111,6 +112,12 @@ export function TransactionsClient({
 
     function handleEdit(transaction: Transaction) {
         setEditingTransaction(transaction)
+        setModalOpen(true)
+    }
+
+    function handleDuplicate(transaction: Transaction) {
+        setDuplicatingTransaction(transaction)
+        setEditingTransaction(null)
         setModalOpen(true)
     }
 
@@ -171,6 +178,7 @@ export function TransactionsClient({
                             date={day}
                             transactions={grouped[day]!}
                             onEdit={handleEdit}
+                            onDuplicate={handleDuplicate}
                             onDelete={handleDeleteRequest}
                         />
                     ))}
@@ -193,9 +201,11 @@ export function TransactionsClient({
                 <TransactionModal
                     accounts={initialAccounts}
                     transaction={editingTransaction}
+                    duplicateFrom={duplicatingTransaction}
                     onClose={() => {
-                        setModalOpen(false);
+                        setModalOpen(false)
                         setEditingTransaction(null)
+                        setDuplicatingTransaction(null)
                     }}
                     onSaved={handleTransactionSaved}
                 />
