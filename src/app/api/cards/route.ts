@@ -11,6 +11,7 @@ const createCardSchema = z.object({
     brand: z.nativeEnum(CardBrand),
     closingDay: z.number().int().min(1).max(31),
     dueDay: z.number().int().min(1).max(31),
+    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
 })
 
 export async function GET(request: NextRequest) {

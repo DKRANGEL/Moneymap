@@ -14,15 +14,6 @@ const BRAND_LABELS: Record<string, string> = {
     other: 'Outro',
 }
 
-const BRAND_ICONS: Record<string, string> = {
-    visa: '💳',
-    mastercard: '🔴',
-    elo: '🟡',
-    hipercard: '🟠',
-    amex: '🔵',
-    other: '💳',
-}
-
 type CardSectionProps = {
     accountId: string
     initialCards: Card[]
@@ -99,34 +90,38 @@ export function CardSection({accountId, initialCards}: CardSectionProps) {
                     <p className="text-text-secondary text-sm">Nenhum cartão cadastrado</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4" style={{maxWidth: '600px'}}>
                     {cards.map(card => (
                         <div
                             key={card.id}
-                            className="bg-surface-low rounded-xl p-5 flex flex-col gap-4 relative"
+                            className="relative rounded-2xl p-5 flex flex-col justify-between overflow-hidden cursor-pointer"
+                            style={{backgroundColor: card.color, aspectRatio: '1.586'}}
                         >
-                            {/* Header do card */}
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div
-                                        className="w-9 h-9 bg-surface-card rounded-lg flex items-center justify-center text-lg">
-                                        {BRAND_ICONS[card.brand]}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-text-primary">{card.nickname}</p>
-                                        <p className="text-xs text-text-secondary">•••• {card.lastFour}</p>
-                                    </div>
-                                </div>
+                            {/* Círculos decorativos */}
+                            <div
+                                className="absolute -right-10 -top-10 w-48 h-48 rounded-full opacity-20"
+                                style={{backgroundColor: 'rgba(255,255,255,0.3)'}}
+                            />
+                            <div
+                                className="absolute -right-6 -bottom-10 w-36 h-36 rounded-full opacity-10"
+                                style={{backgroundColor: 'rgba(255,255,255,0.3)'}}
+                            />
+
+                            {/* Header */}
+                            <div className="flex items-start justify-between relative z-10">
+        <span className="text-white/80 text-xs font-medium uppercase tracking-widest leading-relaxed max-w-[80%]">
+          {card.nickname}
+        </span>
                                 <div className="relative">
                                     <button
                                         onClick={() => setMenuOpenId(menuOpenId === card.id ? null : card.id)}
-                                        className="text-text-secondary hover:text-text-primary transition-colors"
+                                        className="text-white/60 hover:text-white transition-colors"
                                     >
                                         <MoreVertical size={16}/>
                                     </button>
                                     {menuOpenId === card.id && (
                                         <div
-                                            className="absolute right-0 top-6 bg-surface-high rounded-lg shadow-xl border border-white/5 overflow-hidden z-10 min-w-[140px]">
+                                            className="absolute right-0 top-6 bg-surface-high rounded-lg shadow-xl border border-white/5 overflow-hidden z-[100] min-w-[140px]">
                                             <button
                                                 onClick={() => handleEdit(card)}
                                                 className="w-full text-left px-4 py-2.5 text-sm text-text-primary hover:bg-surface-bright transition-colors"
@@ -144,20 +139,22 @@ export function CardSection({accountId, initialCards}: CardSectionProps) {
                                 </div>
                             </div>
 
-                            {/* Info */}
-                            <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                                <div className="flex flex-col gap-0.5">
-                                    <p className="text-[10px] text-text-secondary uppercase tracking-wider">
-                                        Fecha dia {card.closingDay} · Vence dia {card.dueDay}
-                                    </p>
-                                    <p className="text-xs text-text-secondary">{BRAND_LABELS[card.brand]}</p>
+                            {/* Footer do cartão */}
+                            <div className="flex items-end justify-between relative z-10">
+                                <div className="flex flex-col gap-1">
+          <span className="text-white font-mono text-base tracking-[0.2em]">
+            •••• •••• •••• {card.lastFour}
+          </span>
+                                    <span className="text-white/60 text-xs">
+            {BRAND_LABELS[card.brand]} · Fecha {card.closingDay} · Vence {card.dueDay}
+          </span>
                                 </div>
-                                <span className={`
-                  px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase rounded
-                  ${card.isActive ? 'bg-accent/10 text-accent' : 'bg-surface-high text-text-secondary'}
-                `}>
-                  {card.isActive ? 'Ativo' : 'Inativo'}
-                </span>
+                                {!card.isActive && (
+                                    <span
+                                        className="bg-black/30 text-white/60 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded">
+            Inativo
+          </span>
+                                )}
                             </div>
                         </div>
                     ))}
