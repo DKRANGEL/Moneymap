@@ -1,8 +1,9 @@
 ﻿'use client'
 
+import {useState} from 'react'
 import {
     ShoppingCart, Wallet, CreditCard, Home, Car,
-    Utensils, Heart, Zap, TrendingUp, MoreHorizontal
+    Utensils, Heart, Zap, TrendingUp, MoreHorizontal, MoreVertical
 } from 'lucide-react'
 
 type Transaction = {
@@ -52,7 +53,14 @@ const PAYMENT_LABELS: Record<string, string> = {
     transferencia: 'Transferência',
 }
 
-export function TransactionCard({transaction: tx}: { transaction: Transaction }) {
+type TransactionCardProps = {
+    transaction: Transaction
+    onEdit: (transaction: Transaction) => void
+    onDelete: (transaction: Transaction) => void
+}
+
+export function TransactionCard({transaction: tx, onEdit, onDelete}: TransactionCardProps) {
+    const [menuOpen, setMenuOpen] = useState(false)
     const isEntrada = tx.type === 'entrada'
     const icon = tx.category?.icon
         ? CATEGORY_ICONS[tx.category.icon] ?? <MoreHorizontal size={18}/>
@@ -83,15 +91,50 @@ export function TransactionCard({transaction: tx}: { transaction: Transaction })
                 </div>
             </div>
 
-            {/* Valor e status */}
-            <div className="flex flex-col items-end gap-1">
-        <span className={`font-display font-bold text-sm ${isEntrada ? 'text-status-success' : 'text-status-error'}`}>
-          {isEntrada ? '+' : '-'} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-        </span>
-                <span
-                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${STATUS_STYLES[tx.status] ?? 'bg-surface-high text-text-secondary'}`}>
-          {STATUS_LABELS[tx.status] ?? tx.status}
-        </span>
+            {/* Valor, status e menu */}
+            <div className="flex items-center gap-4">
+                <div className="flex flex-col items-end gap-1">
+          <span className={`font-display font-bold text-sm ${isEntrada ? 'text-status-success' : 'text-status-error'}`}>
+            {isEntrada ? '+' : '-'} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+          </span>
+                    <span
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${STATUS_STYLES[tx.status] ?? 'bg-surface-high text-text-secondary'}`}>
+            {STATUS_LABELS[tx.status] ?? tx.status}
+          </span>
+                </div>
+
+                {/* Menu */}
+                <div className="relative">
+                    <button
+                        onClick={() => setMenuOpen(prev => !prev)}
+                        className="text-text-secondary hover:text-text-primary transition-colors p-1"
+                    >
+                        <MoreVertical size={16}/>
+                    </button>
+                    {menuOpen && (
+                        <div
+                            className="absolute right-0 top-7 bg-surface-high rounded-lg shadow-xl border border-white/5 overflow-hidden z-10 min-w-[140px]">
+                            <button
+                                onClick={() => {
+                                    onEdit(tx);
+                                    setMenuOpen(false)
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-text-primary hover:bg-surface-bright transition-colors"
+                            >
+                                Editar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    onDelete(tx);
+                                    setMenuOpen(false)
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-status-error hover:bg-surface-bright transition-colors"
+                            >
+                                Excluir
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )
