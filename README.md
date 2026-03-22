@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Moneymap
 
-## Getting Started
+Personal finance dashboard — PDF statement parsing, Open Finance sync via Pluggy, and smart transaction deduplication.
 
-First, run the development server:
+---
 
+## O que é
+
+Moneymap é um sistema de controle financeiro pessoal web-first. O problema que resolve: ferramentas como Organizze têm integração Open Finance mas os dados chegam imprecisos e desatualizados. O Moneymap resolve isso com ingestão híbrida — extrato PDF como fonte de verdade + sync via Pluggy — com deduplicação automática entre as duas fontes.
+
+---
+
+## Stack
+
+| Camada | Tecnologia |
+|---|---|
+| Framework | Next.js 14 (App Router) |
+| Linguagem | TypeScript strict |
+| Banco de dados | Supabase (PostgreSQL) |
+| ORM | Prisma 6 |
+| Auth | Supabase Auth (Google OAuth) |
+| Storage | Supabase Storage |
+| UI | Tailwind CSS + shadcn/ui |
+| Testes unitários | Vitest |
+| Testes e2e | Playwright |
+| Open Finance | Pluggy (v0.7) |
+| PDF Parsing | pdfjs-dist (v0.3) |
+
+---
+
+## Como rodar localmente
+
+### Pré-requisitos
+- Node.js 18+
+- Conta no [Supabase](https://supabase.com)
+- Projeto configurado no Google Cloud Console (OAuth)
+
+### Setup
 ```bash
+# 1. Clone o repositório
+git clone https://github.com/DKRANGEL/Moneymap.git
+cd moneymap
+
+# 2. Instale as dependências
+npm install
+
+# 3. Configure as variáveis de ambiente
+cp .env.example .env.local
+# Preencha .env.local com suas credenciais do Supabase
+
+# 4. Rode as migrations do banco
+npx prisma migrate dev
+
+# 5. Suba o servidor de desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acessa `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Scripts disponíveis
+```bash
+npm run dev          # servidor de desenvolvimento
+npm run build        # build de produção
+npm run lint         # ESLint
+npm run typecheck    # TypeScript sem emitir arquivos
+npm test             # testes unitários (Vitest)
+npm run test:e2e     # testes end-to-end (Playwright)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Estrutura do projeto
+```
+src/
+├── app/
+│   ├── (auth)/          # rotas públicas (login)
+│   ├── (dashboard)/     # rotas protegidas
+│   └── api/             # route handlers
+├── components/
+│   ├── auth/            # componentes de autenticação
+│   └── dashboard/       # componentes do dashboard
+└── lib/
+    ├── supabase/        # clientes Supabase (browser e server)
+    ├── prisma.ts        # singleton do PrismaClient
+    └── merge/           # lógica de deduplicação (v0.7)
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Milestones
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Versão | Feature | Status |
+|---|---|---|
+| v0.1 | Auth & Estrutura Base | ✅ Concluído |
+| v0.2 | Contas | 🔲 Pendente |
+| v0.3 | Upload de PDF | 🔲 Pendente |
+| v0.4 | Transações | 🔲 Pendente |
+| v0.5 | Categorias & Regras | 🔲 Pendente |
+| v0.6 | Dashboard | 🔲 Pendente |
+| v0.7 | Integração Pluggy | 🔲 Pendente |
+| v0.8 | Review de Merges | 🔲 Pendente |
+| v1.0 | MVP Completo | 🔲 Pendente |
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contribuindo
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Veja [CONTRIBUTING.md](./CONTRIBUTING.md) para o workflow de desenvolvimento, padrões de commit, issues e PRs.
