@@ -22,9 +22,10 @@ model User {
 
   accounts     Account[]
   transactions Transaction[]
-  uploads      PdfUpload[]
   categories   Category[]
   rules        CategoryRule[]
+  cards        Card[]
+  pdfUploads   PdfUpload[]
 
   @@map("users")
 }
@@ -44,21 +45,45 @@ model Account {
   updatedAt       DateTime    @updatedAt
 
   transactions Transaction[]
-  uploads      PdfUpload[]
+  cards        Card[]
+  pdfUploads   PdfUpload[]
 
   @@index([userId])
   @@map("accounts")
 }
 
+// ─── CARTÕES ──────────────────────────────────────────────────────────────────
+model Card {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId  String
+  account    Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  nickname   String
+  lastFour   String    @db.Char(4)
+  brand      CardBrand
+  closingDay Int
+  dueDay     Int
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([accountId])
+  @@map("cards")
+}
+
 // ─── CATEGORIAS ───────────────────────────────────────────────────────────────
 model Category {
-  id        String    @id @default(uuid())
+  id        String     @id @default(uuid())
   userId    String?
-  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   icon      String?
   color     String?
-  isDefault Boolean   @default(false)
+  isDefault Boolean    @default(false)
   parentId  String?
   parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children  Category[] @relation("CategoryHierarchy")
@@ -86,34 +111,39 @@ model CategoryRule {
 
 // ─── TRANSAÇÕES ───────────────────────────────────────────────────────────────
 model Transaction {
-  id          String            @id @default(uuid())
-  userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accountId   String
-  account     Account           @relation(fields: [accountId], references: [id])
-  categoryId  String?
-  category    Category?         @relation(fields: [categoryId], references: [id])
-  amount      Decimal           @db.Decimal(12, 2)
-  type        TransactionType
-  description String
-  date        DateTime          @db.Date
-  dateTime    DateTime?
-  source      TransactionSource
-  pluggyId    String?
-  uploadId    String?
-  upload      PdfUpload?        @relation(fields: [uploadId], references: [id])
-  mergeStatus MergeStatus       @default(confirmed)
-  mergedWith  String?
-  isDuplicate Boolean           @default(false)
-  isPending   Boolean           @default(false)
-  isRecurring Boolean           @default(false)
-  notes       String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId  String
+  account    Account   @relation(fields: [accountId], references: [id])
+  cardId     String?
+  card       Card?     @relation(fields: [cardId], references: [id])
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  // Dados financeiros
+  amount        Decimal           @db.Decimal(12, 2)
+  type          TransactionType
+  description   String
+  date          DateTime          @db.Date
+  paymentMethod PaymentMethod
+  status        TransactionStatus @default(pendente)
+
+  // Recorrência
+  isFixed           Boolean @default(false)
+  installmentNumber Int?
+  installmentsTotal Int?
+  recurringGroupId  String?
+
+  // Extras
+  isPending Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, date])
   @@index([userId, accountId])
-  @@index([pluggyId])
+  @@index([recurringGroupId])
   @@map("transactions")
 }
 
@@ -135,8 +165,6 @@ model PdfUpload {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  transactions Transaction[]
-
   @@map("pdf_uploads")
 }
 
@@ -156,21 +184,33 @@ enum AccountType {
   investimento
 }
 
+enum CardBrand {
+  visa
+  mastercard
+  elo
+  hipercard
+  amex
+  other
+}
+
 enum TransactionType {
   entrada
   saida
 }
 
-enum TransactionSource {
-  pdf
-  pluggy
-  manual
+enum PaymentMethod {
+  pix
+  boleto
+  credito
+  debito
+  dinheiro
+  transferencia
 }
 
-enum MergeStatus {
-  confirmed
-  pending
-  merged
+enum TransactionStatus {
+  pendente
+  pago
+  agendado
 }
 
 enum UploadStatus {
