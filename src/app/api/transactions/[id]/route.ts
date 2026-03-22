@@ -65,7 +65,7 @@ export async function PATCH(request: NextRequest, {params}: RouteParams) {
     }
 }
 
-export async function DELETE(_request: NextRequest, {params}: RouteParams) {
+export async function DELETE(request: NextRequest, {params}: RouteParams) {
     const supabase = await createClient()
     const {data: {user}} = await supabase.auth.getUser()
 
@@ -74,6 +74,9 @@ export async function DELETE(_request: NextRequest, {params}: RouteParams) {
     }
 
     try {
+        const {searchParams} = new URL(request.url)
+        const deleteAll = searchParams.get('deleteAll') === 'true'
+
         const existing = await prisma.transaction.findFirst({
             where: {id: params.id, userId: user.id},
         })
@@ -82,9 +85,21 @@ export async function DELETE(_request: NextRequest, {params}: RouteParams) {
             return NextResponse.json({error: 'Transação não encontrada'}, {status: 404})
         }
 
-        await prisma.transaction.delete({
-            where: {id: params.id},
-        })
+        if (deleteAll && existing.recurringGroupId) {
+            // Deleta esta e todas as próximas do mesmo grupo
+            await prisma.transaction.deleteMany({
+                where: {
+                    userId: user.id,
+                    recurringGroupId: existing.recurringGroupId,
+                    date: {gte: existing.date},
+                },
+            })
+        } else {
+            // Deleta só esta
+            await prisma.transaction.delete({
+                where: {id: params.id},
+            })
+        }
 
         return NextResponse.json({success: true})
     } catch {
