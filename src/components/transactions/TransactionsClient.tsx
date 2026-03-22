@@ -80,7 +80,11 @@ export function TransactionsClient({
             const res = await fetch(`/api/transactions?${params}`)
             if (res.ok) {
                 const data = await res.json()
-                setTransactions(data.transactions)
+                setTransactions(data.transactions.map((tx: Transaction & { amount: unknown }) => ({
+                    ...tx,
+                    amount: Number(tx.amount),
+                    date: typeof tx.date === 'string' ? tx.date : new Date(tx.date).toISOString(),
+                })))
                 setSummary(data.summary)
             }
         } finally {
@@ -99,8 +103,7 @@ export function TransactionsClient({
         fetchTransactions(month, year, newFilters)
     }
 
-    function handleTransactionSaved(transaction: Transaction) {
-        setTransactions(prev => [transaction, ...prev])
+    function handleTransactionSaved() {
         fetchTransactions(month, year, filters)
         setModalOpen(false)
     }
