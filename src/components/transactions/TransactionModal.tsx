@@ -47,9 +47,7 @@ export function TransactionModal({accounts, transaction, duplicateFrom, onClose,
     const isEditing = !!transaction
     const source = transaction ?? duplicateFrom ?? null
 
-    const [type, setType] = useState<'entrada' | 'saida'>(
-        (source?.type as 'entrada' | 'saida') ?? 'saida'
-    )
+    const [type, setType] = useState<'entrada' | 'saida'>((source?.type as 'entrada' | 'saida') ?? 'saida')
     const [description, setDescription] = useState(source?.description ?? '')
     const [amount, setAmount] = useState(source?.amount ? String(source.amount) : '')
     const [date, setDate] = useState(
@@ -65,6 +63,23 @@ export function TransactionModal({accounts, transaction, duplicateFrom, onClose,
     const [cards, setCards] = useState<Card[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    // Fixas e parceladas — só na criação
+    const [isFixed, setIsFixed] = useState(false)
+    const [fixedDay, setFixedDay] = useState(new Date().getDate())
+    const [isInstallment, setIsInstallment] = useState(false)
+    const [installmentsTotal, setInstallmentsTotal] = useState(2)
+    const [installmentNumberStart, setInstallmentNumberStart] = useState(1)
+
+    function handleToggleFixed(val: boolean) {
+        setIsFixed(val)
+        if (val) setIsInstallment(false)
+    }
+
+    function handleToggleInstallment(val: boolean) {
+        setIsInstallment(val)
+        if (val) setIsFixed(false)
+    }
 
     async function handleAccountChange(id: string) {
         setAccountId(id)
@@ -110,6 +125,18 @@ export function TransactionModal({accounts, transaction, duplicateFrom, onClose,
             setError('Selecione um cartão');
             return
         }
+        if (isFixed && (!fixedDay || fixedDay < 1 || fixedDay > 31)) {
+            setError('Informe o dia do mês válido');
+            return
+        }
+        if (isInstallment && installmentsTotal < 2) {
+            setError('Parcelamento mínimo de 2x');
+            return
+        }
+        if (isInstallment && installmentNumberStart > installmentsTotal) {
+            setError('Parcela inicial não pode ser maior que o total');
+            return
+        }
 
         setLoading(true)
         setError(null)
@@ -118,20 +145,33 @@ export function TransactionModal({accounts, transaction, duplicateFrom, onClose,
             const url = isEditing ? `/api/transactions/${transaction.id}` : '/api/transactions'
             const method = isEditing ? 'PATCH' : 'POST'
 
+            const body: Record<string, unknown> = {
+                type,
+                description,
+                amount: Number(amount),
+                date: new Date(date + 'T12:00:00').toISOString(),
+                paymentMethod,
+                accountId,
+                cardId: cardId || undefined,
+                status,
+                notes: notes || undefined,
+            }
+
+            if (!isEditing) {
+                if (isFixed) {
+                    body.isFixed = true
+                    body.fixedDay = fixedDay
+                }
+                if (isInstallment) {
+                    body.installmentsTotal = installmentsTotal
+                    body.installmentNumberStart = installmentNumberStart
+                }
+            }
+
             const res = await fetch(url, {
                 method,
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    type,
-                    description,
-                    amount: Number(amount),
-                    date: new Date(date + 'T12:00:00').toISOString(),
-                    paymentMethod,
-                    accountId,
-                    cardId: cardId || undefined,
-                    status,
-                    notes: notes || undefined,
-                }),
+                body: JSON.stringify(body),
             })
 
             if (!res.ok) {
@@ -294,6 +334,91 @@ export function TransactionModal({accounts, transaction, duplicateFrom, onClose,
                             <option value="agendado">Agendado</option>
                         </select>
                     </div>
+
+                    {/* Fixas e parceladas — só na criação */}
+                    {!isEditing && (
+                        <div className="flex flex-col gap-4 pt-4 border-t border-white/5">
+                            <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">Recorrência</p>
+
+                            {/* Conta fixa */}
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-text-primary">Conta fixa</p>
+                                        <p className="text-xs text-text-secondary">Repete todo mês no mesmo dia</p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleToggleFixed(!isFixed)}
+                                        className={`w-10 h-6 rounded-full transition-colors relative ${isFixed ? 'bg-accent' : 'bg-surface-high'}`}
+                                    >
+                                        <span
+                                            className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${isFixed ? 'translate-x-5' : 'translate-x-1'}`}/>
+                                    </button>
+                                </div>
+                                {isFixed && (
+                                    <div className="flex flex-col gap-2">
+                                        <label
+                                            className="text-xs font-medium text-text-secondary uppercase tracking-wider">Dia
+                                            do mês</label>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={31}
+                                            value={fixedDay}
+                                            onChange={e => setFixedDay(Number(e.target.value))}
+                                            className="w-full bg-surface-low border-0 rounded-lg px-4 py-3 text-text-primary focus:ring-0 focus:outline-none text-sm"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Parcelado */}
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-text-primary">Parcelado</p>
+                                        <p className="text-xs text-text-secondary">Divide em múltiplas parcelas</p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleToggleInstallment(!isInstallment)}
+                                        className={`w-10 h-6 rounded-full transition-colors relative ${isInstallment ? 'bg-accent' : 'bg-surface-high'}`}
+                                    >
+                                        <span
+                                            className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${isInstallment ? 'translate-x-5' : 'translate-x-1'}`}/>
+                                    </button>
+                                </div>
+                                {isInstallment && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="flex flex-col gap-2">
+                                            <label
+                                                className="text-xs font-medium text-text-secondary uppercase tracking-wider">Total
+                                                de parcelas</label>
+                                            <input
+                                                type="number"
+                                                min={2}
+                                                value={installmentsTotal}
+                                                onChange={e => setInstallmentsTotal(Number(e.target.value))}
+                                                className="w-full bg-surface-low border-0 rounded-lg px-4 py-3 text-text-primary focus:ring-0 focus:outline-none text-sm"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label
+                                                className="text-xs font-medium text-text-secondary uppercase tracking-wider">Parcela
+                                                inicial</label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={installmentsTotal}
+                                                value={installmentNumberStart}
+                                                onChange={e => setInstallmentNumberStart(Number(e.target.value))}
+                                                className="w-full bg-surface-low border-0 rounded-lg px-4 py-3 text-text-primary focus:ring-0 focus:outline-none text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Notas */}
                     <div className="flex flex-col gap-2">
