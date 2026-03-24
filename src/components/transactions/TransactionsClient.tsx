@@ -9,6 +9,7 @@ import {FilterBar} from './FilterBar'
 import {TransactionGroup} from './TransactionGroup'
 import {TransactionModal} from './TransactionModal'
 import {ConfirmModal} from './ConfirmModal'
+import {RecurringDeleteModal} from './RecurringDeleteModal'
 
 type Transaction = {
     id: string
@@ -19,6 +20,10 @@ type Transaction = {
     paymentMethod: string
     status: string
     notes: string | null
+    recurringGroupId: string | null
+    installmentNumber: number | null
+    installmentsTotal: number | null
+    isFixed: boolean
     account: { name: string; bank: string }
     card: { nickname: string; lastFour: string } | null
     category: { name: string; icon: string | null; color: string | null } | null
@@ -125,13 +130,15 @@ export function TransactionsClient({
         setDeletingTransaction(transaction)
     }
 
-    async function handleDeleteConfirm() {
+    async function handleDeleteConfirm(deleteAll: boolean = false) {
         if (!deletingTransaction) return
         setDeleteLoading(true)
         try {
-            const res = await fetch(`/api/transactions/${deletingTransaction.id}`, {
-                method: 'DELETE',
-            })
+            const url = deleteAll
+                ? `/api/transactions/${deletingTransaction.id}?deleteAll=true`
+                : `/api/transactions/${deletingTransaction.id}`
+
+            const res = await fetch(url, {method: 'DELETE'})
             if (res.ok) {
                 setDeletingTransaction(null)
                 fetchTransactions(month, year, filters)
@@ -213,14 +220,23 @@ export function TransactionsClient({
 
             {/* Modal confirmação exclusão */}
             {deletingTransaction && (
-                <ConfirmModal
-                    title="Excluir transação"
-                    message={`Tem certeza que deseja excluir "${deletingTransaction.description}"? Esta ação não pode ser desfeita.`}
-                    confirmLabel="Excluir"
-                    onConfirm={handleDeleteConfirm}
-                    onClose={() => setDeletingTransaction(null)}
-                    loading={deleteLoading}
-                />
+                deletingTransaction.recurringGroupId ? (
+                    <RecurringDeleteModal
+                        transaction={deletingTransaction}
+                        onConfirm={handleDeleteConfirm}
+                        onClose={() => setDeletingTransaction(null)}
+                        loading={deleteLoading}
+                    />
+                ) : (
+                    <ConfirmModal
+                        title="Excluir transação"
+                        message={`Tem certeza que deseja excluir "${deletingTransaction.description}"? Esta ação não pode ser desfeita.`}
+                        confirmLabel="Excluir"
+                        onConfirm={() => handleDeleteConfirm(false)}
+                        onClose={() => setDeletingTransaction(null)}
+                        loading={deleteLoading}
+                    />
+                )
             )}
         </div>
     )
