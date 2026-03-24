@@ -10,6 +10,7 @@ import {TransactionGroup} from './TransactionGroup'
 import {TransactionModal} from './TransactionModal'
 import {ConfirmModal} from './ConfirmModal'
 import {RecurringDeleteModal} from './RecurringDeleteModal'
+import {RecurringEditModal} from './RecurringEditModal'
 
 type Transaction = {
     id: string
@@ -66,6 +67,7 @@ export function TransactionsClient({
     const [modalOpen, setModalOpen] = useState(false)
     const [duplicatingTransaction, setDuplicatingTransaction] = useState<Transaction | null>(null)
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+    const [recurringEditPending, setRecurringEditPending] = useState<Transaction | null>(null)
     const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null)
     const [deleteLoading, setDeleteLoading] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -116,8 +118,12 @@ export function TransactionsClient({
     }
 
     function handleEdit(transaction: Transaction) {
-        setEditingTransaction(transaction)
-        setModalOpen(true)
+        if (transaction.recurringGroupId) {
+            setRecurringEditPending(transaction)
+        } else {
+            setEditingTransaction(transaction)
+            setModalOpen(true)
+        }
     }
 
     function handleDuplicate(transaction: Transaction) {
@@ -146,6 +152,16 @@ export function TransactionsClient({
         } finally {
             setDeleteLoading(false)
         }
+    }
+
+    const [editAll, setEditAll] = useState(false)
+
+    function handleRecurringEditConfirm(all: boolean) {
+        if (!recurringEditPending) return
+        setEditAll(all)
+        setEditingTransaction(recurringEditPending)
+        setRecurringEditPending(null)
+        setModalOpen(true)
     }
 
     const grouped = transactions.reduce<Record<string, Transaction[]>>((acc, tx) => {
@@ -208,13 +224,23 @@ export function TransactionsClient({
                 <TransactionModal
                     accounts={initialAccounts}
                     transaction={editingTransaction}
+                    editAll={editAll}
                     duplicateFrom={duplicatingTransaction}
                     onClose={() => {
                         setModalOpen(false)
                         setEditingTransaction(null)
                         setDuplicatingTransaction(null)
+                        setEditAll(false)
                     }}
                     onSaved={handleTransactionSaved}
+                />
+            )}
+
+            {recurringEditPending && (
+                <RecurringEditModal
+                    isFixed={recurringEditPending.isFixed}
+                    onConfirm={handleRecurringEditConfirm}
+                    onClose={() => setRecurringEditPending(null)}
                 />
             )}
 
