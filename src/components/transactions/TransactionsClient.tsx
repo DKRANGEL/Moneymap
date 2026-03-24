@@ -9,6 +9,8 @@ import {FilterBar} from './FilterBar'
 import {TransactionGroup} from './TransactionGroup'
 import {TransactionModal} from './TransactionModal'
 import {ConfirmModal} from './ConfirmModal'
+import {RecurringDeleteModal} from './RecurringDeleteModal'
+import {RecurringEditModal} from './RecurringEditModal'
 
 type Transaction = {
     id: string
@@ -19,6 +21,10 @@ type Transaction = {
     paymentMethod: string
     status: string
     notes: string | null
+    recurringGroupId: string | null
+    installmentNumber: number | null
+    installmentsTotal: number | null
+    isFixed: boolean
     account: { name: string; bank: string }
     card: { nickname: string; lastFour: string } | null
     category: { name: string; icon: string | null; color: string | null } | null
@@ -61,6 +67,7 @@ export function TransactionsClient({
     const [modalOpen, setModalOpen] = useState(false)
     const [duplicatingTransaction, setDuplicatingTransaction] = useState<Transaction | null>(null)
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+    const [recurringEditPending, setRecurringEditPending] = useState<Transaction | null>(null)
     const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null)
     const [deleteLoading, setDeleteLoading] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -111,8 +118,12 @@ export function TransactionsClient({
     }
 
     function handleEdit(transaction: Transaction) {
-        setEditingTransaction(transaction)
-        setModalOpen(true)
+        if (transaction.recurringGroupId) {
+            setRecurringEditPending(transaction)
+        } else {
+            setEditingTransaction(transaction)
+            setModalOpen(true)
+        }
     }
 
     function handleDuplicate(transaction: Transaction) {
@@ -125,13 +136,15 @@ export function TransactionsClient({
         setDeletingTransaction(transaction)
     }
 
-    async function handleDeleteConfirm() {
+    async function handleDeleteConfirm(deleteAll: boolean = false) {
         if (!deletingTransaction) return
         setDeleteLoading(true)
         try {
-            const res = await fetch(`/api/transactions/${deletingTransaction.id}`, {
-                method: 'DELETE',
-            })
+            const url = deleteAll
+                ? `/api/transactions/${deletingTransaction.id}?deleteAll=true`
+                : `/api/transactions/${deletingTransaction.id}`
+
+            const res = await fetch(url, {method: 'DELETE'})
             if (res.ok) {
                 setDeletingTransaction(null)
                 fetchTransactions(month, year, filters)
@@ -139,6 +152,16 @@ export function TransactionsClient({
         } finally {
             setDeleteLoading(false)
         }
+    }
+
+    const [editAll, setEditAll] = useState(false)
+
+    function handleRecurringEditConfirm(all: boolean) {
+        if (!recurringEditPending) return
+        setEditAll(all)
+        setEditingTransaction(recurringEditPending)
+        setRecurringEditPending(null)
+        setModalOpen(true)
     }
 
     const grouped = transactions.reduce<Record<string, Transaction[]>>((acc, tx) => {
@@ -201,26 +224,45 @@ export function TransactionsClient({
                 <TransactionModal
                     accounts={initialAccounts}
                     transaction={editingTransaction}
+                    editAll={editAll}
                     duplicateFrom={duplicatingTransaction}
                     onClose={() => {
                         setModalOpen(false)
                         setEditingTransaction(null)
                         setDuplicatingTransaction(null)
+                        setEditAll(false)
                     }}
                     onSaved={handleTransactionSaved}
                 />
             )}
 
+            {recurringEditPending && (
+                <RecurringEditModal
+                    isFixed={recurringEditPending.isFixed}
+                    onConfirm={handleRecurringEditConfirm}
+                    onClose={() => setRecurringEditPending(null)}
+                />
+            )}
+
             {/* Modal confirmação exclusão */}
             {deletingTransaction && (
-                <ConfirmModal
-                    title="Excluir transação"
-                    message={`Tem certeza que deseja excluir "${deletingTransaction.description}"? Esta ação não pode ser desfeita.`}
-                    confirmLabel="Excluir"
-                    onConfirm={handleDeleteConfirm}
-                    onClose={() => setDeletingTransaction(null)}
-                    loading={deleteLoading}
-                />
+                deletingTransaction.recurringGroupId ? (
+                    <RecurringDeleteModal
+                        transaction={deletingTransaction}
+                        onConfirm={handleDeleteConfirm}
+                        onClose={() => setDeletingTransaction(null)}
+                        loading={deleteLoading}
+                    />
+                ) : (
+                    <ConfirmModal
+                        title="Excluir transação"
+                        message={`Tem certeza que deseja excluir "${deletingTransaction.description}"? Esta ação não pode ser desfeita.`}
+                        confirmLabel="Excluir"
+                        onConfirm={() => handleDeleteConfirm(false)}
+                        onClose={() => setDeletingTransaction(null)}
+                        loading={deleteLoading}
+                    />
+                )
             )}
         </div>
     )

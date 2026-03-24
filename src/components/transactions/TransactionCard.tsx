@@ -15,6 +15,10 @@ type Transaction = {
     paymentMethod: string
     status: string
     notes: string | null
+    recurringGroupId: string | null
+    installmentNumber: number | null
+    installmentsTotal: number | null
+    isFixed: boolean
     account: { name: string; bank: string }
     card: { nickname: string; lastFour: string } | null
     category: { name: string; icon: string | null; color: string | null } | null
@@ -60,7 +64,7 @@ type TransactionCardProps = {
     onDelete: (transaction: Transaction) => void
 }
 
-export function TransactionCard({ transaction: tx, onEdit, onDuplicate, onDelete }: TransactionCardProps) {
+export function TransactionCard({transaction: tx, onEdit, onDuplicate, onDelete}: TransactionCardProps) {
     const [menuOpen, setMenuOpen] = useState(false)
     const isEntrada = tx.type === 'entrada'
     const icon = tx.category?.icon
@@ -98,10 +102,24 @@ export function TransactionCard({ transaction: tx, onEdit, onDuplicate, onDelete
           <span className={`font-display font-bold text-sm ${isEntrada ? 'text-status-success' : 'text-status-error'}`}>
             {isEntrada ? '+' : '-'} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
           </span>
-                    <span
-                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${STATUS_STYLES[tx.status] ?? 'bg-surface-high text-text-secondary'}`}>
-            {STATUS_LABELS[tx.status] ?? tx.status}
-          </span>
+                    <div className="flex items-center gap-1">
+                        {tx.isFixed && (
+                            <span
+                                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-accent/10 text-accent">
+                Fixo
+              </span>
+                        )}
+                        {tx.installmentNumber && tx.installmentsTotal && (
+                            <span
+                                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-surface-high text-text-secondary">
+                {tx.installmentNumber}/{tx.installmentsTotal}
+              </span>
+                        )}
+                        <span
+                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${STATUS_STYLES[tx.status] ?? 'bg-surface-high text-text-secondary'}`}>
+              {STATUS_LABELS[tx.status] ?? tx.status}
+            </span>
+                    </div>
                 </div>
 
                 {/* Menu */}

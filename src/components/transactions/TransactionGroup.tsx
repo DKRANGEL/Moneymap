@@ -9,6 +9,10 @@ type Transaction = {
     paymentMethod: string
     status: string
     notes: string | null
+    recurringGroupId: string | null
+    installmentNumber: number | null
+    installmentsTotal: number | null
+    isFixed: boolean
     account: { name: string; bank: string }
     card: { nickname: string; lastFour: string } | null
     category: { name: string; icon: string | null; color: string | null } | null
