@@ -30,6 +30,7 @@ type TransactionModalProps = {
     accounts: Account[]
     transaction?: Transaction | null
     duplicateFrom?: Transaction | null
+    editAll?: boolean
     onClose: () => void
     onSaved: () => void
 }
@@ -43,7 +44,7 @@ const PAYMENT_OPTIONS = [
     {value: 'transferencia', label: 'Transferência'},
 ]
 
-export function TransactionModal({accounts, transaction, duplicateFrom, onClose, onSaved}: TransactionModalProps) {
+export function TransactionModal({ accounts, transaction, duplicateFrom, editAll = false, onClose, onSaved }: TransactionModalProps) {
     const isEditing = !!transaction
     const source = transaction ?? duplicateFrom ?? null
 
@@ -142,7 +143,9 @@ export function TransactionModal({accounts, transaction, duplicateFrom, onClose,
         setError(null)
 
         try {
-            const url = isEditing ? `/api/transactions/${transaction.id}` : '/api/transactions'
+            const url = isEditing
+                ? `/api/transactions/${transaction.id}${editAll ? '?editAll=true' : ''}`
+                : '/api/transactions'
             const method = isEditing ? 'PATCH' : 'POST'
 
             const body: Record<string, unknown> = {

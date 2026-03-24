@@ -28,6 +28,9 @@ export async function PATCH(request: NextRequest, {params}: RouteParams) {
     }
 
     try {
+        const {searchParams} = new URL(request.url)
+        const editAll = searchParams.get('editAll') === 'true'
+
         const body = await request.json()
         const parsed = updateTransactionSchema.safeParse(body)
 
@@ -46,6 +49,82 @@ export async function PATCH(request: NextRequest, {params}: RouteParams) {
             return NextResponse.json({error: 'Transação não encontrada'}, {status: 404})
         }
 
+        if (editAll && existing.recurringGroupId) {
+            console.log('PATCH editAll debug:', {
+                existingId: existing.id,
+                existingDate: existing.date,
+                existingInstallmentNumber: existing.installmentNumber,
+                parsedDate: parsed.data.date,
+                newBaseDate: parsed.data.date ? new Date(parsed.data.date) : existing.date,
+                newBaseDateUTC: parsed.data.date ? new Date(parsed.data.date).toISOString() : existing.date,
+            })
+
+            // Busca todas as ocorrências futuras ordenadas por data
+            const futureOccurrences = await prisma.transaction.findMany({
+                where: {
+                    userId: user.id,
+                    recurringGroupId: existing.recurringGroupId,
+                    ...(existing.installmentNumber !== null
+                            ? {installmentNumber: {gte: existing.installmentNumber}}
+                            : {date: {gte: existing.date}}
+                    ),
+                },
+                orderBy: existing.installmentNumber !== null
+                    ? {installmentNumber: 'asc'}
+                    : {date: 'asc'},
+            })
+
+            const newBaseDate = parsed.data.date
+                ? new Date(parsed.data.date)
+                : existing.date
+            const {description, amount, paymentMethod, accountId, cardId, notes} = parsed.data
+
+            // Extrai descrição base removendo sufixo de parcela se existir
+            const baseDescription = description
+                ? description.replace(/\s*\(\d+\/\d+\)$/, '')
+                : existing.description.replace(/\s*\(\d+\/\d+\)$/, '')
+
+            await Promise.all(
+                futureOccurrences.map(async (occurrence, index) => {
+                    const newDate = new Date(Date.UTC(
+                        newBaseDate.getUTCFullYear(),
+                        newBaseDate.getUTCMonth() + index,
+                        newBaseDate.getUTCDate(),
+                    ))
+
+                    const newDescription = occurrence.installmentsTotal
+                        ? `${baseDescription} (${occurrence.installmentNumber}/${occurrence.installmentsTotal})`
+                        : baseDescription
+
+                    return prisma.transaction.update({
+                        where: {id: occurrence.id},
+                        data: {
+                            description: newDescription,
+                            ...(amount && {amount}),
+                            ...(paymentMethod && {paymentMethod}),
+                            ...(accountId && {accountId}),
+                            ...(cardId !== undefined && {cardId}),
+                            ...(notes !== undefined && {notes}),
+                            ...(index === 0 && parsed.data.status && {status: parsed.data.status}),
+                            date: newDate,
+                        },
+                    })
+                })
+            )
+
+            const updated = await prisma.transaction.findFirst({
+                where: {id: params.id},
+                include: {
+                    account: {select: {name: true, bank: true}},
+                    card: {select: {nickname: true, lastFour: true}},
+                    category: {select: {name: true, icon: true, color: true}},
+                },
+            })
+
+            return NextResponse.json(updated)
+        }
+
+        // Edição simples — só esta
         const updated = await prisma.transaction.update({
             where: {id: params.id},
             data: {
