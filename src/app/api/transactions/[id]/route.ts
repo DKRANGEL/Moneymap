@@ -50,16 +50,6 @@ export async function PATCH(request: NextRequest, {params}: RouteParams) {
         }
 
         if (editAll && existing.recurringGroupId) {
-            console.log('PATCH editAll debug:', {
-                existingId: existing.id,
-                existingDate: existing.date,
-                existingInstallmentNumber: existing.installmentNumber,
-                parsedDate: parsed.data.date,
-                newBaseDate: parsed.data.date ? new Date(parsed.data.date) : existing.date,
-                newBaseDateUTC: parsed.data.date ? new Date(parsed.data.date).toISOString() : existing.date,
-            })
-
-            // Busca todas as ocorrências futuras ordenadas por data
             const futureOccurrences = await prisma.transaction.findMany({
                 where: {
                     userId: user.id,
