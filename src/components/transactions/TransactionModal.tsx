@@ -349,10 +349,10 @@ export function TransactionModal({accounts, transaction, duplicateFrom, onClose,
                                     </div>
                                     <button
                                         onClick={() => handleToggleFixed(!isFixed)}
-                                        className={`w-10 h-6 rounded-full transition-colors relative ${isFixed ? 'bg-accent' : 'bg-surface-high'}`}
+                                        className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${isFixed ? 'bg-accent' : 'bg-surface-high'}`}
                                     >
                                         <span
-                                            className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${isFixed ? 'translate-x-5' : 'translate-x-1'}`}/>
+                                            className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${isFixed ? 'translate-x-5' : 'translate-x-0'}`}/>
                                     </button>
                                 </div>
                                 {isFixed && (
@@ -381,10 +381,10 @@ export function TransactionModal({accounts, transaction, duplicateFrom, onClose,
                                     </div>
                                     <button
                                         onClick={() => handleToggleInstallment(!isInstallment)}
-                                        className={`w-10 h-6 rounded-full transition-colors relative ${isInstallment ? 'bg-accent' : 'bg-surface-high'}`}
+                                        className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${isInstallment ? 'bg-accent' : 'bg-surface-high'}`}
                                     >
                                         <span
-                                            className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${isInstallment ? 'translate-x-5' : 'translate-x-1'}`}/>
+                                            className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${isInstallment ? 'translate-x-5' : 'translate-x-0'}`}/>
                                     </button>
                                 </div>
                                 {isInstallment && (
