@@ -182,11 +182,8 @@ export async function createTransaction(
             const installmentNumber = startInstallment + i
             const baseDate = addMonths(input.date, i)
 
-            let referenceDate = baseDate
-            if (input.paymentMethod === 'credito' && closingDay !== undefined) {
-                const {month, year} = getTransactionReferenceMonth(baseDate, input.paymentMethod, closingDay)
-                referenceDate = new Date(year, month - 1, baseDate.getDate())
-            }
+            // Parceladas não aplicam lógica de virada — data informada é a data real da parcela
+            const referenceDate = baseDate
 
             transactions.push({
                 userId,
