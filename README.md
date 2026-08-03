@@ -24,7 +24,7 @@ Moneymap é um sistema de controle financeiro pessoal web-first. O problema que 
 | Testes unitários | Vitest |
 | Testes e2e | Playwright |
 | Open Finance | Pluggy (v0.7) |
-| PDF Parsing | pdfjs-dist (v0.3) |
+| PDF Parsing | pdfjs-dist (v0.6) |
 
 ---
 
@@ -74,15 +74,16 @@ npm run test:e2e     # testes end-to-end (Playwright)
 src/
 ├── app/
 │   ├── (auth)/          # rotas públicas (login)
-│   ├── (dashboard)/     # rotas protegidas
-│   └── api/             # route handlers
+│   ├── (dashboard)/     # rotas protegidas (dashboard, accounts, transactions)
+│   └── api/             # route handlers (accounts, cards, transactions, auth)
 ├── components/
 │   ├── auth/            # componentes de autenticação
-│   └── dashboard/       # componentes do dashboard
+│   ├── dashboard/        # componentes do dashboard
+│   └── transactions/    # componentes de listagem e edição de transações
 └── lib/
     ├── supabase/        # clientes Supabase (browser e server)
     ├── prisma.ts        # singleton do PrismaClient
-    └── merge/           # lógica de deduplicação (v0.7)
+    └── transactions/    # lógica de negócio de transações
 ```
 
 ---
@@ -92,11 +93,11 @@ src/
 | Versão | Feature | Status |
 |---|---|---|
 | v0.1 | Auth & Estrutura Base | ✅ Concluído |
-| v0.2 | Contas | 🔲 Pendente |
-| v0.3 | Upload de PDF | 🔲 Pendente |
-| v0.4 | Transações | 🔲 Pendente |
-| v0.5 | Categorias & Regras | 🔲 Pendente |
-| v0.6 | Dashboard | 🔲 Pendente |
+| v0.2 | Contas | ✅ Concluído |
+| v0.3 | Cartões & Transações | ✅ Concluído |
+| v0.4 | Categorias & Regras | 🔲 Pendente |
+| v0.5 | Dashboard | 🔲 Pendente |
+| v0.6 | Upload de PDF | 🔲 Pendente |
 | v0.7 | Integração Pluggy | 🔲 Pendente |
 | v0.8 | Review de Merges | 🔲 Pendente |
 | v1.0 | MVP Completo | 🔲 Pendente |

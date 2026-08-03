@@ -1,10 +1,11 @@
 ﻿'use client'
 
-import {Account} from '@prisma/client'
+import {Account, Card} from '@prisma/client'
 import {useState} from 'react'
 import {ArrowLeft} from 'lucide-react'
 import {useRouter} from 'next/navigation'
 import {AccountModal} from './AccountModal'
+import {CardSection} from './CardSection'
 
 const BANK_LABELS: Record<string, string> = {
     nubank: 'Nubank',
@@ -31,9 +32,10 @@ const BANK_ICONS: Record<string, string> = {
 
 type AccountDetailClientProps = {
     account: Account
+    initialCards: Card[]
 }
 
-export function AccountDetailClient({account: initialAccount}: AccountDetailClientProps) {
+export function AccountDetailClient({account: initialAccount, initialCards}: AccountDetailClientProps) {
     const router = useRouter()
     const [account, setAccount] = useState(initialAccount)
     const [modalOpen, setModalOpen] = useState(false)
@@ -115,21 +117,8 @@ export function AccountDetailClient({account: initialAccount}: AccountDetailClie
                 </div>
             </div>
 
-            {/* Placeholder Cartões */}
-            <div className="bg-surface-card rounded-2xl p-8">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-display text-lg font-bold text-text-primary">
-                        Cartões
-                    </h2>
-                    <span
-                        className="text-xs text-text-secondary uppercase tracking-wider bg-surface-high px-2 py-1 rounded">
-            Em breve
-          </span>
-                </div>
-                <p className="text-text-secondary text-sm">
-                    O gerenciamento de cartões vinculados a esta conta estará disponível em breve.
-                </p>
-            </div>
+            {/* Seção Cartões */}
+            <CardSection accountId={account.id} initialCards={initialCards}/>
 
             {/* Ações */}
             <div className="flex gap-3">
